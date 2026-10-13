@@ -1,0 +1,7 @@
+# 运行本项目的依赖
+# 安装：pip install -r requirements.txt
+
+PyQt5>=5.15            # 界面框架（程序入口、全部窗口）
+PyQtWebEngine>=5.15    # 地图模式必需：提供 QWebEngineView 承载百度地图页面
+numpy>=1.24            # 全部向量化物理计算（σ-范数、邻接矩阵、控制量）
+matplotlib>=3.7        # Matplotlib 数学空间仿真动画

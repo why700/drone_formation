@@ -1,0 +1,90 @@
+<!-- baidu_map.html -->
+<!DOCTYPE html>
+<html>
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <style type="text/css">
+        body, html,#allmap {width: 100%;height: 100%;overflow: hidden;margin:0;font-family:"微软雅黑";}
+    </style>
+    <!-- 请替换 AK -->
+    <script type="text/javascript" src="https://api.map.baidu.com/api?v=3.0&ak=你的AK"></script>
+    <title>Drone Map</title>
+</head>
+<body>
+    <div id="allmap"></div>
+</body>
+</html>
+<script type="text/javascript">
+    var map = new BMap.Map("allmap");
+    var point = new BMap.Point(116.404, 39.915);
+    map.centerAndZoom(point, 19);
+    map.enableScrollWheelZoom(true);
+    map.setMapType(BMAP_HYBRID_MAP);
+
+    function updateMap(jsonData) {
+        try {
+            var data = JSON.parse(jsonData);
+            map.clearOverlays();
+
+            // 1. 绘制障碍物 (红圈)
+            if (data.obstacle) {
+                var obsPt = new BMap.Point(data.obstacle.pos[0], data.obstacle.pos[1]);
+                var obsCircle = new BMap.Circle(obsPt, data.obstacle.radius, {
+                    strokeColor:"white", strokeWeight:2, strokeOpacity:0.8, fillOpacity:0.4, fillColor: "red"
+                });
+                map.addOverlay(obsCircle);
+            }
+
+            // === 2. 新增：绘制目标点 (绿色叉号) ===
+            if (data.target) {
+                var tPt = new BMap.Point(data.target[0], data.target[1]);
+                // 画两条线组成一个 X
+                // 长度调整：经纬度差值，0.00015大约是15米左右
+                var d = 0.00015;
+
+                var line1 = new BMap.Polyline([
+                    new BMap.Point(tPt.lng - d, tPt.lat - d),
+                    new BMap.Point(tPt.lng + d, tPt.lat + d)
+                ], {strokeColor:"#52c41a", strokeWeight:6, strokeOpacity:1});
+
+                var line2 = new BMap.Polyline([
+                    new BMap.Point(tPt.lng - d, tPt.lat + d),
+                    new BMap.Point(tPt.lng + d, tPt.lat - d)
+                ], {strokeColor:"#52c41a", strokeWeight:6, strokeOpacity:1});
+
+                map.addOverlay(line1);
+                map.addOverlay(line2);
+            }
+            // ===================================
+
+            // 3. 绘制连线
+            if (data.adj) {
+                for (var k = 0; k < data.adj.length; k++) {
+                    var i = data.adj[k][0];
+                    var j = data.adj[k][1];
+                    var p1 = new BMap.Point(data.nodes[i][0], data.nodes[i][1]);
+                    var p2 = new BMap.Point(data.nodes[j][0], data.nodes[j][1]);
+                    var polyline = new BMap.Polyline([p1, p2], {
+                        strokeColor: "cyan", strokeWeight: 1, strokeOpacity: 0.6
+                    });
+                    map.addOverlay(polyline);
+                }
+            }
+
+            // 4. 绘制无人机
+            for (var i = 0; i < data.nodes.length; i++) {
+                var pt = new BMap.Point(data.nodes[i][0], data.nodes[i][1]);
+                var range = new BMap.Circle(pt, 15, {
+                    strokeColor:"red", strokeWeight:1, strokeOpacity:0.3, fillOpacity:0.1, fillColor: "red"
+                });
+                map.addOverlay(range);
+                var drone = new BMap.Circle(pt, 1, {
+                    strokeColor:"yellow", strokeWeight:1, fillOpacity:1, fillColor: "yellow"
+                });
+                map.addOverlay(drone);
+            }
+        } catch(e) {
+            console.log(e);
+        }
+    }
+</script>
